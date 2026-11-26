@@ -1,0 +1,114 @@
+/*
+ * Inbox (components/views/inbox-view.tsx): a list panel and a reading panel side by side on desktop; on phones and
+ * tablets the list and the opened notification take turns. Rows lead with the club, then the title and a two-line
+ * preview; urgent notices carry a red pill. Built on the shared surface, glass and type tokens.
+ */
+.oc-inbox-workspace { --oc-inbox-urgent: #b42318; --oc-inbox-radius: var(--oc-radius-2xl); --oc-inbox-row-radius: var(--oc-radius-lg); }
+
+.oc-inbox-panes { display: grid; gap: 1rem; align-items: start; }
+.oc-inbox-panes[data-reading] > .oc-inbox-list { display: none; }
+.oc-inbox-panes:not([data-reading]) > .oc-inbox-reader { display: none; }
+
+/* List panel */
+.oc-inbox-list { position: relative; min-width: 0; padding: 0 .5rem .5rem; border: 1px solid var(--oc-content-edge); border-radius: var(--oc-inbox-radius); background: var(--oc-content-surface); box-shadow: var(--oc-content-shadow); }
+.oc-inbox-list-bar { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem .375rem; min-height: 3.5rem; padding: .5rem .25rem .25rem .75rem; }
+.oc-inbox-list-count { font-size: var(--oc-text-caption); color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.oc-inbox-group-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem .5rem; padding: .875rem .75rem .375rem 1.75rem; }
+.oc-inbox-group-heading h3 { margin: 0; font-family: var(--oc-font-sans); font-size: .8125rem; font-weight: var(--oc-weight-semibold, 600); letter-spacing: 0; text-transform: none; color: var(--foreground); }
+.oc-inbox-group-count { margin: 0; font-size: .75rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+.oc-inbox-rows { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; padding: 0; list-style: none; }
+
+/* Rows */
+.oc-inbox-row { position: relative; display: flex; min-width: 0; align-items: flex-start; border-radius: var(--oc-inbox-row-radius); transition: background-color .14s ease; }
+.oc-inbox-row:hover { background-color: color-mix(in srgb, var(--foreground) 4.5%, transparent); }
+.oc-inbox-row[data-checked] { background-color: color-mix(in srgb, var(--foreground) 7%, transparent); }
+.oc-inbox-row-check { margin: 1.125rem 0 0 .75rem; }
+.oc-inbox-row-main { display: flex; flex: 1; min-width: 0; align-items: flex-start; gap: .625rem; padding: .75rem .875rem .8125rem .5rem; border: 0; border-radius: var(--oc-inbox-row-radius); background: none; color: inherit; font-weight: 400; text-align: left; cursor: pointer; }
+.oc-inbox-row-main:focus { outline: none; }
+.oc-inbox-row-main:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.oc-inbox-dot { flex: none; width: .5rem; height: .5rem; margin-top: .9rem; border-radius: 50%; background: transparent; }
+.oc-inbox-row[data-unread] .oc-inbox-dot { background: var(--primary); }
+.oc-inbox-row-text { display: flex; flex: 1; min-width: 0; flex-direction: column; }
+.oc-inbox-row-top { display: flex; align-items: baseline; gap: .625rem; }
+.oc-inbox-club { flex: 1; min-width: 0; overflow: hidden; font-size: .875rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.oc-inbox-time { flex: none; font-size: .8125rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; transition: opacity .12s ease; }
+.oc-inbox-title { overflow: hidden; font-size: .9375rem; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.oc-inbox-preview { display: -webkit-box; overflow: hidden; font-size: .875rem; line-height: 1.25rem; color: var(--muted-foreground); overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.oc-inbox-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .375rem; font-size: .75rem; color: var(--muted-foreground); }
+.oc-inbox-row[data-unread] .oc-inbox-club { font-weight: 700; }
+.oc-inbox-row[data-unread] .oc-inbox-title { font-weight: 600; }
+
+/* Urgent: white on red, always the same pill. */
+.oc-inbox-urgent { display: inline-flex; align-items: center; gap: .3rem; height: 1.375rem; padding: 0 .55rem; border-radius: var(--oc-radius-full); background: var(--oc-inbox-urgent); color: #fff; font-size: .75rem; font-weight: 600; line-height: 1; }
+.oc-inbox-urgent svg { width: .75rem; height: .75rem; }
+
+/* Quick actions appear on hover or keyboard focus; touch screens use Select or the opened notification. */
+.oc-inbox-quick { position: absolute; top: .5rem; right: .5rem; display: flex; gap: 2px; padding: 3px; border-radius: var(--oc-radius-full); background: var(--card); box-shadow: 0 0 0 1px var(--border), 0 8px 18px -8px rgb(12 29 47 / 35%); opacity: 0; transform: translateY(-2px); pointer-events: none; transition: opacity .16s ease, transform .22s cubic-bezier(.3,.7,.4,1); }
+.oc-inbox-quick [data-slot="button"] { width: 1.875rem; min-width: 1.875rem; height: 1.875rem; min-height: 1.875rem; border-radius: 50%; }
+.oc-inbox-quick svg { width: 1rem; height: 1rem; }
+.oc-inbox-row:hover .oc-inbox-quick, .oc-inbox-row:has(:focus-visible) .oc-inbox-quick { opacity: 1; transform: none; pointer-events: auto; }
+.oc-inbox-row:hover .oc-inbox-time, .oc-inbox-row:has(:focus-visible) .oc-inbox-time { opacity: 0; }
+@media (hover: none) {
+  .oc-inbox-quick { display: none; }
+  .oc-inbox-row:has(:focus-visible) .oc-inbox-time { opacity: 1; }
+}
+
+/* Selecting: a floating bar for the checked rows, above the phone dock. */
+.oc-inbox-bulk { position: sticky; bottom: calc(var(--oc-shell-mobile-height, 0px) + env(safe-area-inset-bottom, 0px) + .75rem); z-index: 2; display: flex; gap: 2px; margin: .5rem .25rem 0; padding: 4px; border: 1px solid var(--oc-glass-light-edge); border-radius: var(--oc-radius-full); background: var(--oc-glass-light-material); box-shadow: var(--oc-glass-light-depth); backdrop-filter: var(--oc-glass-light-filter); -webkit-backdrop-filter: var(--oc-glass-light-filter); }
+.oc-inbox-bulk > [data-slot="button"] { flex: 1; border-radius: var(--oc-radius-full); }
+
+/* Reading panel */
+.oc-inbox-reader { display: flex; min-width: 0; flex-direction: column; overflow: hidden; border-radius: var(--oc-inbox-radius); }
+.oc-inbox-reader-bar { display: flex; flex: none; align-items: center; gap: .25rem; min-height: 3.5rem; padding: .5rem .75rem; border-bottom: 1px solid var(--oc-content-edge); }
+.oc-inbox-position { margin-left: .25rem; font-size: .8125rem; color: var(--muted-foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.oc-inbox-reader-body { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: 1.25rem; padding: 1.75rem clamp(1.25rem, 4vw, 2.75rem) 1.5rem; overflow-y: auto; animation: oc-inbox-in .32s cubic-bezier(.2,.8,.2,1); }
+.oc-inbox-reader-body > * { width: 100%; max-width: 42rem; }
+.oc-inbox-sender { display: flex; align-items: center; gap: .75rem; }
+.oc-inbox-kind { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .5rem; font-size: .8125rem; color: var(--muted-foreground); }
+.oc-inbox-reader-title { margin: 0; font-family: var(--oc-font-display); font-size: clamp(1.625rem, 2.4vw, 2.125rem); font-weight: 400; line-height: 1.2; letter-spacing: -.02em; text-wrap: balance; overflow-wrap: anywhere; }
+.oc-inbox-reader-title:focus { outline: none; }
+.oc-inbox-reader-title:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; border-radius: var(--oc-radius-sm); }
+.oc-inbox-reader-content { display: grid; gap: 1rem; font-size: 1rem; line-height: 1.65; color: var(--foreground); }
+.oc-inbox-reader-content p { margin: 0; }
+.oc-inbox-lines { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--oc-content-edge); }
+.oc-inbox-lines li { padding: .75rem 0; border-bottom: 1px solid var(--oc-content-edge); font-size: .9375rem; line-height: 1.45; font-variant-numeric: tabular-nums; }
+.oc-inbox-callout { padding: 1rem 1.125rem; border-radius: var(--oc-radius-lg); background: var(--muted); font-size: .9375rem; }
+.oc-inbox-reader-actions { display: flex; flex: none; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: .5rem; padding: .875rem 1.25rem 1rem; border-top: 1px solid var(--oc-content-edge); }
+.oc-inbox-reader-actions:empty { display: none; }
+.oc-inbox-reader-empty { display: none; }
+
+@keyframes oc-inbox-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .oc-inbox-reader-body { animation: none; }
+  .oc-inbox-row, .oc-inbox-quick, .oc-inbox-time { transition: none; }
+}
+
+/* Desktop: both panels at once; the reader stays in view while the list scrolls. */
+@media (min-width: 1024px) {
+  .oc-inbox-panes { grid-template-columns: minmax(20rem, 27rem) minmax(0, 1fr); }
+  .oc-inbox-panes[data-reading] > .oc-inbox-list { display: block; }
+  .oc-inbox-panes:not([data-reading]) > .oc-inbox-reader { display: flex; }
+  .oc-inbox-reader { position: sticky; top: calc(var(--oc-shell-header-height, 4rem) + var(--support-banner-height, 0px) + 1rem); max-height: calc(100dvh - var(--oc-shell-header-height, 4rem) - var(--support-banner-height, 0px) - 2rem); }
+  .oc-inbox-back { display: none; }
+  .oc-inbox-reader-empty { display: flex; flex: 1; min-height: 26rem; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; padding: 3rem; text-align: center; }
+  .oc-inbox-reader-empty p { margin: 0; font-family: var(--oc-font-display); font-size: 1.5rem; }
+  .oc-inbox-reader-empty span { font-size: .9375rem; color: var(--muted-foreground); }
+  .oc-inbox-row[data-selected] { background-color: var(--primary); box-shadow: inset 0 1px 0 rgb(222 239 255 / 16%), 0 10px 24px -14px rgb(8 22 37 / 60%); }
+  .oc-inbox-row[data-selected] :is(.oc-inbox-club, .oc-inbox-title) { color: var(--primary-foreground); }
+  .oc-inbox-row[data-selected] :is(.oc-inbox-time, .oc-inbox-preview, .oc-inbox-meta) { color: color-mix(in srgb, var(--primary-foreground) 76%, transparent); }
+  .oc-inbox-row[data-selected] .oc-inbox-dot { background: transparent; }
+  .oc-inbox-row[data-selected][data-unread] .oc-inbox-dot { background: var(--primary-foreground); }
+  /* On the navy row the shared ring sits just outside the row, where it stays visible. */
+  .oc-inbox-row[data-selected] .oc-inbox-row-main:focus-visible { outline-offset: 2px; }
+}
+
+/* Phones */
+@media (max-width: 639px) {
+  .oc-inbox-list { padding: 0 .25rem .25rem; }
+  .oc-inbox-reader-actions > [data-slot="button"], .oc-inbox-reader-actions > a { flex: 1 1 auto; }
+}
+
+@media (forced-colors: active) {
+  .oc-inbox-urgent, .oc-inbox-quick, .oc-inbox-bulk { border: 1px solid CanvasText; }
+  .oc-inbox-row[data-selected] { outline: 2px solid Highlight; }
+}

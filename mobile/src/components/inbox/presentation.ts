@@ -19,6 +19,8 @@ export const typeLabel = (item: InboxRow) => typeLabels[item.type] ?? "OutClass 
 export const typeIcon = (item: InboxRow): IconComponent => typeIcons[item.type] ?? Bell;
 export const clubName = (item: InboxRow) => item.club?.name || "OutClass";
 export const isUrgent = (item: InboxRow) => item.type === "INTERVIEW";
+/** The urgent pill: white on this red keeps 6.4:1 contrast in light and dark appearance. */
+export const URGENT_RED = "#b42318";
 export const senderTitle = (item: InboxRow) => (item.type === "MESSAGE" ? "Private message" : "Club update");
 export const preview = (item: InboxRow) => item.body.slice(0, 160);
 

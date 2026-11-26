@@ -7,7 +7,7 @@ import { ReportContentButton } from "@/components/reports/report-content-button"
 import { canLeaveWorkspace } from "@/lib/product-navigation"
 import { CommunicationsInbox } from "@/components/communications-inbox"
 import { useEffect, useMemo, useState, useRef } from "react"
-import { Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays } from "@/components/icons"
+import { Bell, Trash2, Mail, MailOpen, ArrowLeft, MapPin, CalendarDays, ChevronUp, ChevronDown, Clock } from "@/components/icons"
 import { ClubLogo } from "@/components/club-logo"
 import { Button } from "@/components/ui/button"
 import { SegmentedControl } from "@/components/ui/segmented-control"
@@ -22,10 +22,10 @@ import { notificationCountLabel, notificationGroups, notificationPriority } from
 import { toast } from "sonner"
 import { OrganizationOwnershipRequests } from "@/components/organization-ownership-requests"
 import { useOrganizationInvitations } from "@/contexts/organization-invitations-context"
-import { Badge } from "@/components/ui/badge"
+import { IconButton } from "@/components/ui/icon-button"
 import { EmptyState } from "@/components/ui/empty-state"
 import { pluralize } from "@/lib/copy/terms"
-import { notificationTypeLabel } from "@/lib/notification-presentation"
+import { notificationRelativeTime, notificationTypeLabel } from "@/lib/notification-presentation"
 import { notificationSettingsHref } from "@/lib/settings-navigation"
 
 const filters = ["All", "Announcements", "Interviews", "Urgent"] as const
@@ -55,6 +55,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   const [selectedId, setSelectedId] = useState<string | null>(null)
   useEffect(() => {
     if (focusNotificationId && items.some((item) => item.id === focusNotificationId)) {
+      setReadingOrder([])
       setSelectedId(focusNotificationId)
       markNotificationRead(focusNotificationId)
       focusNotification(null)
@@ -64,6 +65,9 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
     if (selectedId) detailHeading.current?.focus()
   }, [selectedId])
   const [checked, setChecked] = useState<Set<string>>(new Set())
+  // Checkboxes appear only while selecting; rows otherwise open on click and offer read/delete on hover.
+  const [selecting, setSelecting] = useState(false)
+  const [readingOrder, setReadingOrder] = useState<string[]>([])
   const clubs = useMemo(() => [...new Set(items.map((item) => item.club))].sort(), [items])
   const unread = items.filter((item) => !item.read).length
   const filtered = useMemo(() => {
@@ -96,7 +100,7 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   const checkedIds = filtered.filter((item) => checked.has(item.id)).map((item) => item.id)
   const groups = notificationGroups(filtered, sort === "club", sort === "priority")
   // Each heading counts its own rows; the Unread/Read tabs and filters narrow them first.
-  const countLine = (list: typeof filtered) => <p className="text-xs font-normal normal-case tracking-normal text-muted-foreground">{notificationCountLabel(list)}</p>
+  const countLine = (list: typeof filtered) => <p className="oc-inbox-group-count">{notificationCountLabel(list)}</p>
   const selected = items.find((item) => item.id === selectedId)
   const allChecked = filtered.length > 0 && checkedIds.length === filtered.length
 
@@ -120,8 +124,44 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
   // Notification settings open from the Inbox header; filters show only once the list is long enough to need them.
   const filtering = !!query || filter !== "All" || club !== "all" || readFilter !== "all" || sort !== "priority"
   const showFilters = items.length >= 5 || filtering
+  // Reading order for the previous/next controls: the rows as listed when a notification was opened from the
+  // list. Opening marks it read, which can drop it from Unread or move it under "Unread first", so the order
+  // is kept from that moment (minus deleted rows) rather than recomputed after each read.
+  const listed = groups.flatMap((group) => group.items.map((item) => item.id))
+  const sequence = readingOrder.filter((id) => items.some((item) => item.id === id))
+  const order = selected && sequence.includes(selected.id) ? sequence : listed
+  const position = selected ? order.indexOf(selected.id) : -1
+  function open(id: string, keepOrder = false) {
+    if (!keepOrder) setReadingOrder(listed)
+    setSelectedId(id)
+    markNotificationRead(id)
+  }
+  function toggleChecked(id: string) {
+    setChecked((previous) => {
+      const next = new Set(previous)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  function stopSelecting() {
+    setSelecting(false)
+    setChecked(new Set())
+  }
+  function backToList() {
+    const previous = selectedId
+    setSelectedId(null)
+    requestAnimationFrame(() => {
+      if (previous)
+        document
+          .querySelector<HTMLButtonElement>(`[data-notification-id="${CSS.escape(previous)}"]`)
+          ?.focus()
+    })
+  }
+  // The first available follow-up is the primary action; any others stay secondary.
+  const calendarAction = selected && !selected.href && (selected.eventId || selected.type === "Interview Invite" || selected.locationChange)
+  const draftingApplication = selected ? trackedApps.some(app => app.clubId === selected.clubId && app.status === "Drafting") : false
   return (
-    <div className="oc-inbox-workspace max-w-[var(--oc-content-width)] space-y-6 text-foreground">
+    <div className="oc-inbox-workspace max-w-[var(--oc-content-width)] space-y-5 text-foreground">
       {invitations.length > 0 && <OrganizationOwnershipRequests enabled includeDismissed />}
       {showFilters && <div className="oc-toolbar">
           <SearchField aria-label="Search notifications" placeholder="Search notifications, clubs, or keywords" value={query} onChange={(event) => setQuery(event.target.value)} onClear={() => setQuery("")} containerClassName="min-w-0 flex-1 basis-60" />
@@ -141,163 +181,111 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
           </FilterPopover>
           {filtering && (<Button variant="ghost" size="sm" onClick={() => { resetFilters(); setSort("priority") }}>Clear filters</Button>)}
       </div>}
-      <div
-        className={cn(
-          "grid items-start gap-8",
-          selected && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]",
-        )}
-      >
-        <section
-          aria-label="Notification list"
-          className={cn("min-w-0 overflow-hidden", selected && "hidden lg:block")}
-        >
-          <div className="flex min-h-14 flex-wrap items-center gap-3 border-b border-border px-4 py-3">
-            <Checkbox
-              aria-label="Select all visible notifications"
-              checked={allChecked ? true : checkedIds.length > 0 ? "indeterminate" : false}
-              disabled={!filtered.length}
-              onCheckedChange={() =>
-                setChecked(allChecked ? new Set() : new Set(filtered.map((item) => item.id)))
-              }
-            />
-            <span className="text-xs text-muted-foreground" role="status">
-              {checkedIds.length ? `${checkedIds.length} selected` : pluralize(filtered.length, "result")}
-            </span>
-            {checkedIds.length > 0 && (
-              <div className="ml-auto flex flex-wrap gap-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setNotificationsRead(checkedIds, true)
-                    setChecked(new Set())
-                  }}
-                >
-                  Mark read
+      <div className="oc-inbox-panes" data-reading={selected ? "" : undefined}>
+        <section aria-label="Notification list" className="oc-inbox-list" data-selecting={selecting ? "" : undefined}>
+          <div className="oc-inbox-list-bar">
+            {selecting ? (
+              <>
+                <Checkbox
+                  aria-label="Select all visible notifications"
+                  checked={allChecked ? true : checkedIds.length > 0 ? "indeterminate" : false}
+                  disabled={!filtered.length}
+                  onCheckedChange={() =>
+                    setChecked(allChecked ? new Set() : new Set(filtered.map((item) => item.id)))
+                  }
+                />
+                <span className="oc-inbox-list-count" role="status">
+                  {checkedIds.length ? `${checkedIds.length} selected` : "Select notifications"}
+                </span>
+                <Button size="sm" variant="ghost" className="ml-auto" onClick={stopSelecting}>Done</Button>
+              </>
+            ) : (
+              <>
+                <span className="oc-inbox-list-count" role="status">{pluralize(filtered.length, "result")}{unread ? ` · ${unread} unread` : ""}</span>
+                <Button variant="ghost" size="sm" className="ml-auto" disabled={!unread} onClick={() => void markAllNotificationsRead()}>
+                  <MailOpen className="size-4" /><span className="max-[400px]:sr-only">Mark all as read</span>
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => {
-                    setNotificationsRead(checkedIds, false)
-                    setChecked(new Set())
-                  }}
-                >
-                  Mark unread
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => remove(checkedIds)}
-                  className="text-destructive"
-                >
-                  <Trash2 className="size-4" />
-                  Delete
-                </Button>
-              </div>
+                <Button variant="ghost" size="sm" disabled={!filtered.length} onClick={() => setSelecting(true)}>Select</Button>
+              </>
             )}
-            <Button variant="outline" size="sm" className="ml-auto" disabled={!unread} onClick={() => void markAllNotificationsRead()}>
-              <MailOpen className="size-4" />Mark all as read
-            </Button>
           </div>
-          {!groups.length && <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
-            <h3 className="oc-card-heading uppercase tracking-wider text-muted-foreground">Club updates</h3>
+          {!groups.length && <div className="oc-inbox-group-heading">
+            <h3>Club updates</h3>
             {countLine(filtered)}
           </div>}
-          <div className="oc-inbox-workspace space-y-6">
+          <div className="oc-inbox-groups">
             {groups.map((group) => (
               <section key={group.label} aria-label={group.label}>
-                <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3">
-                  <h3 className="oc-card-heading uppercase tracking-wider text-muted-foreground">{group.label}</h3>
+                <div className="oc-inbox-group-heading">
+                  <h3>{group.label}</h3>
                   {countLine(group.items)}
                 </div>
-                <div className="divide-y divide-border">
+                <ul className="oc-inbox-rows">
                   {group.items.map((item) => (
-                    <div
+                    <li
                       key={item.id}
-                      className={cn(
-                        "flex items-start gap-3 border-l-2 border-transparent px-3 py-3.5 motion-safe:animate-in motion-safe:fade-in motion-safe:transition-colors motion-safe:duration-200 hover:bg-secondary/40",
-                        selectedId === item.id && "bg-secondary/50",
-                        !item.read && "border-l-primary bg-secondary/20",
-                      )}
+                      className="oc-inbox-row"
+                      data-selected={!selecting && selectedId === item.id ? "" : undefined}
+                      data-unread={!item.read ? "" : undefined}
+                      data-checked={checked.has(item.id) ? "" : undefined}
                     >
-                      <Checkbox
-                        className="mt-1"
-                        aria-label={`Select ${item.title}`}
-                        checked={checked.has(item.id)}
-                        onCheckedChange={() =>
-                          setChecked((previous) => {
-                            const next = new Set(previous)
-                            next.has(item.id) ? next.delete(item.id) : next.add(item.id)
-                            return next
-                          })
-                        }
-                      />
+                      {selecting && (
+                        <Checkbox
+                          className="oc-inbox-row-check"
+                          aria-label={`Select ${item.title}`}
+                          checked={checked.has(item.id)}
+                          onCheckedChange={() => toggleChecked(item.id)}
+                        />
+                      )}
                       <button
                         data-notification-id={item.id}
                         type="button"
                         aria-current={selectedId === item.id ? "true" : undefined}
-                        onClick={() => {
-                          setSelectedId(item.id)
-                          markNotificationRead(item.id)
-                        }}
-                        className="min-w-0 flex-1 space-y-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        tabIndex={selecting ? -1 : undefined}
+                        onClick={() => (selecting ? toggleChecked(item.id) : open(item.id))}
+                        className="oc-inbox-row-main"
                       >
-                        <div className="flex items-center gap-2">
+                        <span aria-hidden="true" className="oc-inbox-dot" />
+                        {!selecting && (
                           <ClubLogo
                             clubId={item.clubId}
                             logoUrl={item.logoUrl} marketing={item.marketing}
                             text={item.logoText}
                             color={item.color}
-                            className="size-7 shrink-0 rounded-md text-xs"
+                            className="oc-inbox-avatar size-10 shrink-0 rounded-full text-xs"
                           />
-                          <span className="text-xs text-muted-foreground">{item.club}</span>
-                          {!item.read && (
-                            <span className="ml-auto shrink-0 text-xs font-medium text-primary">
-                              <span
-                                aria-hidden="true"
-                                className="inline-block size-2 rounded-full bg-primary"
-                              />
-                              <span className="sr-only">Unread</span>
-                            </span>
-                          )}
-                        </div>
-                        <p
-                          className={cn(
-                            "text-sm leading-snug",
-                            !item.read ? "font-semibold" : "font-medium",
-                          )}
-                        >
-                          {item.title}
-                        </p>
-                        <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                          {item.preview}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          {item.urgent && (
-                            <Badge variant="warning">Urgent</Badge>
-                          )}
-                          <span>{notificationTypeLabel(item.type)}</span>
-                          <span aria-hidden="true">·</span>
-                          <time dateTime={item.createdAt}>
-                            {item.fullDate === "Just now" && item.createdAt
-                              ? schedulingDateTime(item.createdAt)
-                              : item.fullDate}
-                          </time>
-                        </div>
+                        )}
+                        <span className="oc-inbox-row-text">
+                          <span className="oc-inbox-row-top">
+                            <span className="oc-inbox-club">{item.club}</span>
+                            <time className="oc-inbox-time" dateTime={item.createdAt} title={item.fullDate} suppressHydrationWarning>
+                              {notificationRelativeTime(item.createdAt, item.fullDate)}
+                            </time>
+                          </span>
+                          <span className="oc-inbox-title">
+                            {!item.read && <span className="sr-only">Unread: </span>}
+                            {item.title}
+                          </span>
+                          <span className="oc-inbox-preview">{item.preview}</span>
+                          <span className="oc-inbox-meta">
+                            {item.urgent && <span className="oc-inbox-urgent"><Clock aria-hidden="true" />Urgent</span>}
+                            <span>{notificationTypeLabel(item.type)}</span>
+                          </span>
+                        </span>
                       </button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="size-11 shrink-0 text-muted-foreground hover:text-destructive"
-                        aria-label={`Delete ${item.title}`}
-                        onClick={() => remove([item.id])}
-                      >
-                        <Trash2 className="size-3.5" />
-                      </Button>
-                    </div>
+                      {!selecting && (
+                        <div className="oc-inbox-quick">
+                          <IconButton size="icon-sm" aria-label={item.read ? `Mark ${item.title} unread` : `Mark ${item.title} read`} onClick={() => setNotificationsRead([item.id], !item.read)}>
+                            {item.read ? <Mail /> : <MailOpen />}
+                          </IconButton>
+                          <IconButton size="icon-sm" aria-label={`Delete ${item.title}`} onClick={() => remove([item.id])}>
+                            <Trash2 />
+                          </IconButton>
+                        </div>
+                      )}
+                    </li>
                   ))}
-                </div>
+                </ul>
               </section>
             ))}
             {!filtered.length && (
@@ -311,40 +299,45 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   : !demo.isDemoEnabled && <Button size="sm" variant="outline" asChild><Link href={notificationSettingsHref} scroll={false}>Notification settings</Link></Button>} />
             )}
           </div>
+          {selecting && (
+            <div className="oc-inbox-bulk" role="toolbar" aria-label="Selected notifications">
+              <Button size="sm" variant="ghost" disabled={!checkedIds.length} onClick={() => { setNotificationsRead(checkedIds, true); setChecked(new Set()) }}>Mark read</Button>
+              <Button size="sm" variant="ghost" disabled={!checkedIds.length} onClick={() => { setNotificationsRead(checkedIds, false); setChecked(new Set()) }}>Mark unread</Button>
+              <Button size="sm" variant="ghost" disabled={!checkedIds.length} onClick={() => remove(checkedIds)} className="text-destructive"><Trash2 className="size-4" />Delete</Button>
+            </div>
+          )}
         </section>
-        <section
-          aria-label="Notification details"
-          className={cn("oc-detail-panel min-w-0", !selected && "hidden")}
-        >
-          {!selected ? null : (
+        <section aria-label="Notification details" className="oc-inbox-reader oc-detail-panel">
+          {!selected ? (
+            <div className="oc-inbox-reader-empty">
+              <p>Nothing selected</p>
+              <span>Choose a notification to read it here.</span>
+            </div>
+          ) : (
             <>
-              <div className="space-y-5 border-b border-border p-5 sm:p-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const previous = selectedId
-                    setSelectedId(null)
-                    requestAnimationFrame(() => {
-                      if (previous)
-                        document
-                          .querySelector<HTMLButtonElement>(
-                            `[data-notification-id="${CSS.escape(previous)}"]`,
-                          )
-                          ?.focus()
-                    })
-                  }}
-                >
+              <div className="oc-inbox-reader-bar">
+                <Button variant="ghost" size="sm" className="oc-inbox-back" onClick={backToList}>
                   <ArrowLeft className="size-4" />
-                  Back to notifications
+                  Inbox
                 </Button>
-                <div className="flex items-center gap-3">
+                <IconButton size="icon-sm" aria-label="Previous notification" disabled={position <= 0} onClick={() => open(order[position - 1], true)}><ChevronUp /></IconButton>
+                <IconButton size="icon-sm" aria-label="Next notification" disabled={position < 0 || position >= order.length - 1} onClick={() => open(order[position + 1], true)}><ChevronDown /></IconButton>
+                {position >= 0 && <span className="oc-inbox-position">{position + 1} of {order.length}</span>}
+                <span className="flex-1" />
+                <Button variant="ghost" size="sm" onClick={() => setNotificationsRead([selected.id], !selected.read)}>
+                  {selected.read ? <Mail className="size-4" /> : <MailOpen className="size-4" />}
+                  <span className="max-sm:sr-only">{selected.read ? "Mark unread" : "Mark read"}</span>
+                </Button>
+                <IconButton size="icon-sm" aria-label="Delete" onClick={() => remove([selected.id])}><Trash2 /></IconButton>
+              </div>
+              <div key={selected.id} className="oc-inbox-reader-body">
+                <div className="oc-inbox-sender">
                   <ClubLogo
                     clubId={selected.clubId}
                     logoUrl={selected.logoUrl} marketing={selected.marketing}
                     text={selected.logoText}
                     color={selected.color}
-                    className="size-10 shrink-0 rounded-lg"
+                    className="oc-inbox-avatar size-11 shrink-0 rounded-full text-sm"
                   />
                   <div>
                     <p className="text-sm font-semibold">{selected.club}</p>
@@ -352,63 +345,44 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                   </div>
                 </div>
                 <div>
-                  <p className="mb-2 text-xs text-muted-foreground">
-                    {notificationTypeLabel(selected.type)} · {selected.fullDate}
+                  <p className="oc-inbox-kind">
+                    {selected.urgent && <span className="oc-inbox-urgent"><Clock aria-hidden="true" />Urgent</span>}
+                    <span>{notificationTypeLabel(selected.type)} · {selected.fullDate}</span>
                   </p>
-                  <h2
-                    ref={detailHeading}
-                    tabIndex={-1}
-                    className="oc-section-heading focus-visible:outline-2 focus-visible:outline-ring"
-                  >
+                  <h2 ref={detailHeading} tabIndex={-1} className="oc-inbox-reader-title">
                     {selected.title}
                   </h2>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setNotificationsRead([selected.id], !selected.read)}
-                  >
-                    {selected.read ? <Mail className="size-4" /> : <MailOpen className="size-4" />}
-                    {selected.read ? "Mark unread" : "Mark read"}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => remove([selected.id])}
-                  >
-                    <Trash2 className="size-4" />
-                    Delete
-                  </Button>
-                  {selected.announcementId && <ReportContentButton target={{ type: "announcement", id: selected.announcementId }} label="Report announcement" hidden={selected.ownAnnouncement} className="self-center" />}
+                <div className="oc-inbox-reader-content">
+                  {selected.body.map((paragraph, index) => {
+                    // Schedules arrive one slot per line; they read as a list rather than a run-on paragraph.
+                    const lines = paragraph.split("\n").map((line) => line.trim()).filter(Boolean)
+                    return selected.type === "Interview Invite" && lines.length > 1 ? (
+                      <ul key={index} className="oc-inbox-lines">
+                        {lines.map((line, lineIndex) => <li key={lineIndex}>{line}</li>)}
+                      </ul>
+                    ) : (
+                      <p key={index} className="whitespace-pre-wrap break-words">{paragraph}</p>
+                    )
+                  })}
+                  {selected.locationChange && (
+                    <div className="oc-inbox-callout">
+                      <p className="flex items-center gap-2 font-semibold">
+                        <MapPin className="size-4" />
+                        {selected.locationChange.newLocation}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Previously: {selected.locationChange.oldLocation}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="space-y-5 p-5 sm:p-6">
-                {selected.body.map((paragraph, index) => (
-                  <p
-                    key={index}
-                    className="whitespace-pre-wrap break-words text-sm leading-7 text-foreground"
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-                {selected.locationChange && (
-                  <div className="rounded-lg border border-border bg-muted p-4">
-                    <p className="flex items-center gap-2 text-sm font-medium">
-                      <MapPin className="size-4" />
-                      {selected.locationChange.newLocation}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Previously: {selected.locationChange.oldLocation}
-                    </p>
-                  </div>
-                )}
-                {!selected.href && (selected.eventId ||
-                  selected.type === "Interview Invite" ||
-                  selected.locationChange) && (
+              <div className="oc-inbox-reader-actions">
+                {selected.announcementId && <ReportContentButton target={{ type: "announcement", id: selected.announcementId }} label="Report announcement" hidden={selected.ownAnnouncement} className="mr-auto self-center" />}
+                {calendarAction && (
                   <Button
-                    variant="outline"
+                    variant={selected.taskHref || selected.cta ? "outline" : "default"}
                     onClick={() => {
                       if (selected.eventId) focusEvent(selected.eventId)
                       onNavigate("calendar")
@@ -418,17 +392,16 @@ export function InboxView({ onNavigate }: { onNavigate: (view: ViewId) => void }
                     View calendar
                   </Button>
                 )}
-                {selected.taskHref && <Button variant="outline" asChild><Link href={selected.taskHref}>View task</Link></Button>}
-                {selected.cta && selected.href && !selected.taskHref && <Button variant="outline" asChild><Link href={selected.href}>{selected.cta}</Link></Button>}
+                {selected.taskHref && <Button asChild><Link href={selected.taskHref}>View task</Link></Button>}
+                {selected.cta && selected.href && !selected.taskHref && <Button asChild><Link href={selected.href}>{selected.cta}</Link></Button>}
                 {selected.cta && !selected.href && !selected.taskHref && selected.type !== "Interview Invite" && (
                   <Button
-                    variant="outline"
                     onClick={() => {
                       if (selected.clubId) focusApplication(selected.clubId)
-                      onNavigate(trackedApps.some(app => app.clubId === selected.clubId && app.status === "Drafting") ? "tracker" : "status")
+                      onNavigate(draftingApplication ? "tracker" : "status")
                     }}
                   >
-                    {trackedApps.some(app => app.clubId === selected.clubId && app.status === "Drafting") ? "Continue application" : "View status"}
+                    {draftingApplication ? "Continue application" : "View status"}
                   </Button>
                 )}
               </div>
