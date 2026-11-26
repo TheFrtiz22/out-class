@@ -46,6 +46,7 @@ export async function loadSelectedClubWorkspace(kind: SelectedClubWorkspaceKind,
   }
 }
 
+const __dbg=(...a: unknown[])=>{try{const w=window as unknown as {__ocDiag?:unknown[]};(w.__ocDiag??=[]).push([Math.round(performance.now()),'dbg',...a])}catch{}}
 type Loaded = Awaited<ReturnType<typeof loadSelectedClubWorkspace>>
 export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly, initialScope, decision = "all" }: {
   kind: SelectedClubWorkspaceKind; clubId: string; privacyScope: string;
@@ -65,12 +66,15 @@ export function SelectedClubWorkspace({ kind, clubId, privacyScope, personalOnly
     recordWorkspaceRead("selected", lastRead.current ? (Object.keys(owner) as (keyof typeof owner)[]).filter(key => lastRead.current![key] !== owner[key]) : ["mount"])
     lastRead.current = owner
     let current = true
+    __dbg('effect-start', kind)
     void loadSelectedClubWorkspace(kind, clubId, mode, decision).then(value => {
+      __dbg('loaded', current, isReadAuthorityCurrent(readAuthority))
       if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, value })
     }).catch(() => { if (current && isReadAuthorityCurrent(readAuthority)) setResult({ owner, failed: true }) })
-    return () => { current = false }
+    return () => { __dbg('cleanup'); current = false }
   }, [kind, clubId, mode, decision, owner, demo.ready, demo.isDemoEnabled, loading, user, readAuthority, isReadAuthorityCurrent])
   const current = demo.ready && !demo.isDemoEnabled && !loading && isReadAuthorityCurrent(readAuthority) && result?.owner === owner ? result : null
+  __dbg('render', { ready: demo.ready, loading, auth: isReadAuthorityCurrent(readAuthority), hasResult: !!result, sameOwner: result?.owner === owner, user: !!user })
   if (current?.failed) return <div role="alert" className="space-y-3"><p>Could not load this workspace. Your access may have changed.</p><Button variant="outline" onClick={() => setRetry(value => value + 1)}>Retry workspace</Button></div>
   const entry = current?.value
   if (!entry) return <WorkspaceLoading label={kind === "pipeline" ? "Preparing your applicant pipeline…" : kind === "members" ? "Loading club members…" : kind === "tasks" ? "Loading club tasks…" : "Loading announcements…"} layout={kind === "pipeline" ? "applicants" : kind === "announcements" ? "feed" : kind === "members" ? "table" : "rows"} rows={kind === "pipeline" ? 5 : 3} />
