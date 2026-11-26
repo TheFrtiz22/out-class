@@ -11,8 +11,8 @@
 @import "../styles/data-table.css";
 @import "../styles/editorial.css";
 @import "../styles/navigation-glass.css";
-@import "../styles/inbox.css";
 @import "../styles/pressed-states.css";
+@import "../styles/inbox.css";
 /* Shared dashboard pieces (components/product/dashboard), global like the other primitives. */
 @import "../components/product/dashboard/dashboard.css";
 /* Club workspace pages at phone width: the OutClass app's look (after the primitives it adjusts). */
