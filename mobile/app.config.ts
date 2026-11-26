@@ -70,7 +70,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     // Icon Composer document (iOS 26 Liquid Glass): the ivory OC monogram on navy. icon.png stays the fallback.
     icon: "./assets/icon/OutClass.icon",
     bundleIdentifier: "net.outclass.app",
-    supportsTablet: false,
+    // iPad runs OutClass natively (regular width shows two panes; src/lib/layout.ts) in every orientation and in
+    // Split View. iPhones stay portrait (top-level orientation); the iPhone Duo's inner display ignores supported
+    // orientations and resizes the app anyway (Apple, "Prepare your app for iPhone Duo"). App Store submissions now
+    // need iPad screenshots.
+    supportsTablet: true,
     // Universal links: the web serves apple-app-site-association. The apex domain carries /q
     // short links for every school, so only it is associated.
     associatedDomains: ["applinks:out-class.net", "applinks:www.out-class.net"],
@@ -80,6 +84,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       NSCalendarsFullAccessUsageDescription: "OutClass adds interviews and events to your calendar when you ask it to.",
       NSCalendarsWriteOnlyAccessUsageDescription: "OutClass adds interviews and events to your calendar when you ask it to.",
       ITSAppUsesNonExemptEncryption: false,
+      "UISupportedInterfaceOrientations~ipad": ["UIInterfaceOrientationPortrait", "UIInterfaceOrientationPortraitUpsideDown", "UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"],
     },
     privacyManifests: {
       NSPrivacyTracking: false,
