@@ -94,6 +94,15 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
   }, [selected])
   const lastClub = useRef<string | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  // An open club lives in the address (?club=), so Back, swipe-back, refresh and copied links all land on it.
+  const pushedClub = useRef(false)
+  useEffect(() => {
+    if (isDemoActive()) return
+    const id = new URLSearchParams(filterQuery).get("club")
+    if (!id) { pushedClub.current = false; setSelected(null); return }
+    const club = clubs.find(item => item.id === id)
+    if (club) setSelected(current => current?.id === club.id ? current : club)
+  }, [filterQuery, clubs])
   const { isDemoEnabled } = useDemoMode()
 
   useEffect(() => {
@@ -128,7 +137,9 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
         ?.focus({ preventScroll: true })
     }
   }, [selected])
-  useEffect(() => { setSelected(null) }, [section])
+  // Switching sections closes an open club; the first render keeps a club opened from ?club= in the URL.
+  const shownSection = useRef(section)
+  useEffect(() => { if (shownSection.current === section) return; shownSection.current = section; setSelected(null) }, [section])
   const categories = useMemo(
     () => [...new Set(clubs.map((club) => club.category).filter(Boolean))].sort(),
     [clubs],
@@ -186,6 +197,17 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
   function open(club: DirectoryClub, entry = club.id) {
     lastClub.current = entry
     setSelected(club)
+    if (isDemoActive()) return
+    const url = new URL(window.location.href)
+    url.searchParams.set("club", club.id)
+    window.history.pushState(null, "", url.pathname + url.search + url.hash)
+    pushedClub.current = true
+  }
+  function closeClub() {
+    if (pushedClub.current) { window.history.back(); return }
+    setSelected(null)
+    const url = new URL(window.location.href)
+    if (url.searchParams.has("club")) { url.searchParams.delete("club"); window.history.replaceState(null, "", url.pathname + url.search + url.hash) }
   }
   const featured = clubs.filter(club => club.recommended).slice(0, 3)
   const available = filterDirectory(clubs, emptyDirectoryFilters, now).filter(club => clubRecruitment(club, now).available)
@@ -198,7 +220,7 @@ export function ExploreView({ onNavigate, section = "explore", initialDirectory,
     // listed summary rather than nothing.
     const loaded = isDemoActive() ? selected : profile?.id === selected.id ? profile.club ?? selected : null
     return loaded
-      ? <ClubProfileView club={loaded} onBack={() => setSelected(null)} onNavigate={onNavigate} />
+      ? <ClubProfileView club={loaded} onBack={closeClub} onNavigate={onNavigate} />
       : <LoadingState label="Loading club profile…" layout="workspace" rows={3} />
   }
   return (
