@@ -124,6 +124,9 @@ test('live voting with several signed-in people: ties, late joiners, reconnects,
 
   // Close and confirm the clear Pass, then decide 3 and 4 quickly; then the held applicant in pass 2.
   await leaderPage.getByRole('button', { name: 'Close vote', exact: true }).click()
+  // Someone counted in the room has no ballot (the revoked member), so the room asks before closing early.
+  const early = leaderPage.getByRole('button', { name: 'Close voting now', exact: true })
+  if (await early.waitFor({ timeout: 3000 }).then(() => true, () => false)) await early.click()
   // A clear result: when the session's voting rule decides, the room asks to confirm the rule's outcome;
   // otherwise it shows the leading choice. Either way the outcome is Pass.
   const ruled = leaderPage.getByRole('region', { name: 'Confirm rule outcome' })
