@@ -28,7 +28,7 @@ function harness({ account = 'active', signingError = false, uploadError = false
   process.env.SUPABASE_SECRET_KEY = 'test-only-secret';
   const mocks = {
     // Profile uploads are signed only with the server key; the session client never touches Storage.
-    '@supabase/supabase-js': { createClient: () => ({storage: {getBucket: async () => ({data:{public:false}}), from: name => { calls.push({ step: 'bucket', name }); return { ...bucket, list: async () => ({ data: [], error: null }) }; }}}) },
+    '@supabase/supabase-js': { createClient: (url, key) => (calls.push({ step: 'client', key }), {storage: {getBucket: async () => ({data:{public:false}}), from: name => { calls.push({ step: 'bucket', name }); return { ...bucket, list: async () => ({ data: [], error: null }) }; }}}) },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/navigation': { redirect: () => { throw Error('Authentication required'); } },
@@ -54,6 +54,8 @@ for (const [type, image] of Object.entries(images)) test(`exported upload accept
   assert.deepEqual(sign.options, { upsert: false }); assert.equal(upload.path, sign.path);
   assert.equal(upload.options.contentType, type); assert.deepEqual([...upload.bytes], image.bytes);
   assert.deepEqual([...new Set(h.calls.filter(c => c.step === 'bucket').map(c => c.name))], ['headshots']);
+  // Every Storage client in the upload is built with the server key, never the publishable one.
+  assert.deepEqual([...new Set(h.calls.filter(c => c.step === 'client').map(c => c.key))], ['test-only-secret']);
   assert.ok(h.calls.findIndex(c => c.step === 'audit') < h.calls.findIndex(c => c.step === 'sign'));
   const again = await h.api.uploadProfileFile(form(type)); assert.notEqual(again.reference, result.reference);
 });

@@ -13,6 +13,9 @@ const productionShape = `
   CREATE FUNCTION public.outclass_scholar_status_valid(v JSONB) RETURNS BOOLEAN LANGUAGE sql IMMUTABLE AS $$ SELECT v IS NULL OR jsonb_typeof(v) = 'object' $$;
   CREATE TABLE public.profile_fixture(status JSONB CHECK (public.outclass_scholar_status_valid(status)));
   GRANT INSERT ON public.profile_fixture TO outclass_production_app;
+  CREATE ROLE outclass_web_runtime; CREATE ROLE other_server_writer; CREATE ROLE unrelated_role;
+  CREATE TABLE public."StudentProfile"("scholarStatus" JSONB CHECK (public.outclass_scholar_status_valid("scholarStatus")));
+  GRANT INSERT ON public."StudentProfile" TO outclass_web_runtime; GRANT UPDATE ON public."StudentProfile" TO other_server_writer;
   CREATE TABLE storage.buckets(id text PRIMARY KEY, name text, public boolean);
   CREATE TABLE storage.objects(id text PRIMARY KEY, bucket_id text, name text);
   INSERT INTO storage.buckets VALUES ('resumes','resumes',false),('headshots','headshots',false),('club-assets','club-assets',false),('other','other',false);
@@ -75,6 +78,37 @@ test('CHECK helper is no longer callable by browser roles but still validates se
       await assert.rejects(db.exec(`INSERT INTO public.profile_fixture VALUES ('[1]')`), /check constraint/)
     } finally { await db.exec('RESET ROLE') }
   } finally { await db.close() }
+})
+
+test('every server role that writes profiles keeps the CHECK helper; nobody else gains it', async () => {
+  const db = new PGlite()
+  try {
+    await db.exec(productionShape)
+    await db.exec(migration); await db.exec(migration)
+    const can = async role => (await db.query(`SELECT has_function_privilege('${role}', 'public.outclass_scholar_status_valid(jsonb)', 'EXECUTE') AS ok`)).rows[0].ok
+    for (const role of ['outclass_production_app', 'outclass_web_runtime', 'other_server_writer']) assert.equal(await can(role), true, role)
+    for (const role of ['anon', 'authenticated', 'unrelated_role']) assert.equal(await can(role), false, role)
+    await db.exec('SET ROLE outclass_web_runtime')
+    try { await db.exec(`INSERT INTO public."StudentProfile" VALUES ('{"selections":[]}')`) } finally { await db.exec('RESET ROLE') }
+  } finally { await db.close() }
+})
+
+test('the migration refuses a Storage table without row-level security, and tolerates a missing helper', async () => {
+  const db = new PGlite()
+  try {
+    await db.exec(`CREATE SCHEMA storage; CREATE TABLE storage.objects(id text PRIMARY KEY, bucket_id text, name text);`)
+    await assert.rejects(db.exec(migration), /row-level security enabled/)
+    await db.exec('ROLLBACK')
+    assert.equal((await db.query('SELECT count(*)::int n FROM pg_policies')).rows[0].n, 0)
+    await db.exec('ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY')
+    await db.exec(migration) // no helper function in this database: the Storage part still applies
+    assert.deepEqual((await db.query('SELECT policyname FROM pg_policies')).rows.map(r => r.policyname), ['outclass_profile_files_server_only'])
+  } finally { await db.close() }
+})
+
+test('the migration bounds its lock wait and states the deploy order', () => {
+  assert.match(migration, /^BEGIN;\s*SET LOCAL lock_timeout = '3s';\s*SET LOCAL statement_timeout = '10s';/m)
+  assert.match(migration, /deploy the code first, then apply this migration/)
 })
 
 test('profile storage migration skips Storage on plain PostgreSQL', async () => {
