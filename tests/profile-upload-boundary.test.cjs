@@ -27,7 +27,8 @@ function harness({ account = 'active', signingError = false, uploadError = false
   };
   process.env.SUPABASE_SECRET_KEY = 'test-only-secret';
   const mocks = {
-    '@supabase/supabase-js': { createClient: () => ({storage: {getBucket: async () => ({data:{public:false}}), from: () => ({ list: async () => ({ data: [], error: null }) })}}) },
+    // Profile uploads are signed only with the server key; the session client never touches Storage.
+    '@supabase/supabase-js': { createClient: () => ({storage: {getBucket: async () => ({data:{public:false}}), from: name => { calls.push({ step: 'bucket', name }); return { ...bucket, list: async () => ({ data: [], error: null }) }; }}}) },
     '@/utils/platform-view-as': { platformViewSession: async () => null },
     'next/headers': { headers: async () => new Headers(), cookies: async () => ({ has: () => false, get: () => undefined }) },
     'next/navigation': { redirect: () => { throw Error('Authentication required'); } },
@@ -35,7 +36,7 @@ function harness({ account = 'active', signingError = false, uploadError = false
     '@/utils/support-audit': { auditSupportAction: async () => calls.push({ step: 'audit' }) },
     '@/utils/supabase/server': { createClient: async () => ({
       auth: { getSession: async () => account === 'unauthenticated' ? { data: { session: null }, error: null } : require('./helpers/auth-session.cjs').sessionFor(owner), getUser: async () => ({ data: { user: account === 'unauthenticated' ? null : { id: owner, email: 'student@virginia.edu', email_confirmed_at: account === 'unverified' ? null : '2026-01-01' } } }) },
-      storage: { from: name => { calls.push({ step: 'bucket', name }); return bucket; } },
+      storage: { from: () => { throw Error('Session client must not reach Storage'); } },
     }) },
     '@/utils/prisma': { prisma: {
       $queryRaw: async strings => strings.join('').includes('FROM auth.sessions') ? [{ live: true }] : [],
@@ -52,7 +53,7 @@ for (const [type, image] of Object.entries(images)) test(`exported upload accept
   assert.match(sign.path, new RegExp(`^${owner}/[a-f0-9-]+\\.${image.extension}$`));
   assert.deepEqual(sign.options, { upsert: false }); assert.equal(upload.path, sign.path);
   assert.equal(upload.options.contentType, type); assert.deepEqual([...upload.bytes], image.bytes);
-  assert.deepEqual(h.calls.filter(c => c.step === 'bucket').map(c => c.name), ['headshots']);
+  assert.deepEqual([...new Set(h.calls.filter(c => c.step === 'bucket').map(c => c.name))], ['headshots']);
   assert.ok(h.calls.findIndex(c => c.step === 'audit') < h.calls.findIndex(c => c.step === 'sign'));
   const again = await h.api.uploadProfileFile(form(type)); assert.notEqual(again.reference, result.reference);
 });

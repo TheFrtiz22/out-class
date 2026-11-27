@@ -38,17 +38,17 @@ function profileHarness(recentCount, listError = null) {
   const recent = Array.from({ length: recentCount }, () => ({ created_at: new Date().toISOString() }))
   const admin = { storage: {
     getBucket: async () => ({ data: { public: false } }),
-    from: bucket => ({ list: async (folder, options) => { calls.push({ step: 'list', bucket, folder, options }); return listError ? { data: null, error: listError } : { data: recent, error: null } } }),
+    from: bucket => ({
+      list: async (folder, options) => { calls.push({ step: 'list', bucket, folder, options }); return listError ? { data: null, error: listError } : { data: recent, error: null } },
+      createSignedUploadUrl: async path => { calls.push({ step: 'sign', path }); return { data: { token: 't' } } },
+      uploadToSignedUrl: async () => ({ error: null }),
+    }),
   } }
   const api = unwrapActions(load('actions/storage.ts', {
     '@/utils/mobile-request':{mobileRequest:()=>undefined},'@/utils/auth': { requireAuth: async () => ({ user: { id: owner } }) },
     '@/utils/support-audit': { auditSupportAction: async () => {} },
     'next/headers': { cookies: async () => ({}) },
     '@supabase/supabase-js': { createClient: () => admin },
-    '@/utils/supabase/server': { createClient: async () => ({ storage: { from: () => ({
-      createSignedUploadUrl: async path => { calls.push({ step: 'sign', path }); return { data: { token: 't' } } },
-      uploadToSignedUrl: async () => ({ error: null }),
-    }) } }) },
   }))
   const form = new FormData(); form.set('kind', 'headshot'); form.set('file', new Blob([new Uint8Array(png)], { type: 'image/png' }), 'portrait.png')
   return { api, calls, form }
