@@ -2,15 +2,19 @@
 
 import { randomUUID } from "node:crypto";
 import { auditSupportAction } from "@/utils/support-audit";
-import { createClient } from "@/utils/supabase/server";
 import { requireAuth } from "@/utils/auth";
-import { mobileRequest } from "@/utils/mobile-request";
-import { cookies } from "next/headers";
 import { z } from "zod";
 import { storagePathSchema, validateProfileFile } from "@/lib/student-profile";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { recentObjectCount, UPLOAD_QUOTAS, uploadQuotaError, uploadWindowStart } from "@/lib/upload-quotas";
 import { ActionError, actionResult } from "@/lib/action-result";
+
+/** The person sees a short message; operators need the step and Storage's own reason. No path, token or file content is logged. */
+function storageFailure(step: "bucket" | "list" | "sign" | "upload", bucket: string, cause: unknown, message: string): ActionError {
+  const reason = cause && typeof cause === "object" && "message" in cause ? String((cause as { message: unknown }).message) : cause ? String(cause) : "no data returned";
+  console.error(JSON.stringify({ event: "profile.upload.storage_failed", step, bucket, reason: reason.slice(0, 200) }));
+  return new ActionError(message);
+}
 
 const fileNameSchema = z.string().min(1).max(255).refine(
   name => !/[\\/\x00-\x1f\x7f%?#]/.test(name) && name !== "." && name !== "..",
@@ -45,42 +49,35 @@ async function uploadProfileFileCommand(input: FormData) {
   }
   const bucket = kind === "resume" ? "resumes" : "headshots";
   const path = storagePathSchema.parse(`${user.id}/${randomUUID()}.${extension}`);
-  const cookieStore = await cookies();
-  // The upload is signed as the owner, so Storage's own owner-prefix policy applies. A browser carries
-  // the session in cookies; the native app carries the same verified session as a bearer token.
-  const mobile = mobileRequest();
-  let client = mobile
-    ? createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "", { auth: { persistSession: false, autoRefreshToken: false }, global: { headers: { Authorization: `Bearer ${mobile.token}` } } })
-    : await createClient(cookieStore);
-  if (impersonation || kind === "resume" || kind === "headshot") {
-    const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!secret) throw new ActionError(impersonation ? "Support uploads are unavailable." : "Private document storage is unavailable.");
-    const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, {
-      auth: { persistSession: false, autoRefreshToken: false },
+  // Sign and upload with the server key only. Browser roles have no Storage write access to the
+  // profile buckets, so the bytes stored are always the bytes validated above.
+  const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) throw new ActionError(impersonation ? "Support uploads are unavailable." : "Private document storage is unavailable.");
+  const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL || "", secret, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  {
+    const { data: storedBucket, error } = await admin.storage.getBucket(bucket);
+    if (error || !storedBucket) throw storageFailure("bucket", bucket, error, "Private document storage is unavailable.");
+    if (storedBucket.public) throw storageFailure("bucket", bucket, "bucket is public", "Private document storage is unavailable.");
+  }
+  {
+    // Replacement frequency: count this owner's objects created in the last hour (Storage metadata).
+    const since = uploadWindowStart();
+    const { data: recent, error } = await admin.storage.from(bucket).list(user.id, {
+      limit: UPLOAD_QUOTAS.profile.perUserHour + 1,
+      sortBy: { column: "created_at", order: "desc" },
     });
-    {
-      const { data: storedBucket, error } = await admin.storage.getBucket(bucket);
-      if (error || !storedBucket || storedBucket.public) throw new ActionError("Private document storage is unavailable.");
-    }
-    {
-      // Replacement frequency: count this owner's objects created in the last hour (Storage metadata).
-      const since = uploadWindowStart();
-      const { data: recent, error } = await admin.storage.from(bucket).list(user.id, {
-        limit: UPLOAD_QUOTAS.profile.perUserHour + 1,
-        sortBy: { column: "created_at", order: "desc" },
-      });
-      if (error) throw new ActionError("Private document storage is unavailable.");
-      const quota = uploadQuotaError({ userRecent: recentObjectCount(recent, since) }, UPLOAD_QUOTAS.profile);
-      if (quota) throw new ActionError(quota);
-    }
-    if (impersonation) client = admin;
+    if (error) throw storageFailure("list", bucket, error, "Private document storage is unavailable.");
+    const quota = uploadQuotaError({ userRecent: recentObjectCount(recent, since) }, UPLOAD_QUOTAS.profile);
+    if (quota) throw new ActionError(quota);
   }
   await auditSupportAction("platform.impersonation.storage-upload", user.id);
-  const storage = client.storage.from(bucket);
+  const storage = admin.storage.from(bucket);
   const { data: signed, error: signingError } = await storage.createSignedUploadUrl(path, { upsert: false });
-  if (signingError || !signed) throw new ActionError("Could not prepare upload. Your saved profile has not changed.");
+  if (signingError || !signed) throw storageFailure("sign", bucket, signingError, "Could not prepare upload. Your saved profile has not changed.");
   const { error } = await storage.uploadToSignedUrl(path, signed.token, bytes, { contentType });
-  if (error) throw new ActionError("Upload failed. Your saved profile has not changed.");
+  if (error) throw storageFailure("upload", bucket, error, "Upload failed. Your saved profile has not changed.");
   return { reference: path };
 }
 

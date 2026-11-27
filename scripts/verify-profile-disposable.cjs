@@ -16,6 +16,7 @@ const db=new PrismaClient({datasourceUrl:c.status.DB_URL});
   for(const request of [()=>browser.from('StudentProfile').select('*'),()=>browser.from('StudentProfile').insert({userId:c.identities.student.id,gender:'Male'}),()=>browser.from('StudentProfile').update({gender:'Male'}).eq('userId',c.identities.student.id),()=>browser.from('StudentProfile').delete().eq('userId',c.identities.student.id)])assert.ok((await request()).error,'Browser CRUD denied');
  }
  assert.ok((await browser.storage.from('headshots').createSignedUploadUrl(c.identities.leader.id+'/forged.png')).error,'Foreign owner upload denied');
+ for(const bucket of ['headshots','resumes'])assert.ok((await browser.storage.from(bucket).createSignedUploadUrl(c.identities.student.id+'/own-session.bin')).error,'Owner session upload denied: profile files are server-only');
  await browser.auth.signOut();assert.ok((await browser.storage.from('headshots').createSignedUploadUrl(c.identities.student.id+'/anonymous.png')).error,'Anonymous upload denied');
  const student=c.identities.student;
  await db.studentProfile.update({where:{userId:student.id},data:{highSchool:'Example High School',gender:'Female',pronouns:'She/Her',gpa:3.875,transferStudent:true,scholarStatus:{selections:['ECHOLS','CORE'],other:''}}});
