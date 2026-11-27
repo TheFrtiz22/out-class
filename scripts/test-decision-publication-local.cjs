@@ -15,7 +15,7 @@ try{
  const sql=(input,db='outclass_audiences_test')=>run('docker',['exec','-i',name,'psql','-U','fixture_superuser','-d',db,'-v','ON_ERROR_STOP=1'],{input});
  sql('CREATE ROLE anon;CREATE ROLE authenticated;CREATE ROLE outclass_production_app LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE; CREATE SCHEMA auth;CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid NOT NULL,not_after timestamptz);GRANT USAGE ON SCHEMA auth TO outclass_production_app;GRANT SELECT ON auth.sessions TO outclass_production_app;');
  run(process.execPath,['node_modules/prisma/build/index.js','migrate','deploy'],{env});
- sql(`DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;`);
+ sql(`REVOKE CREATE ON SCHEMA public FROM PUBLIC;`);
  // Populate a second database at the immediate pre-feature schema, then upgrade.
  run('docker',['exec',name,'createdb','-U','fixture_superuser','outclass_audiences_upgrade']);
  const migrations=fs.readdirSync('prisma/migrations').filter(n=>fs.existsSync(`prisma/migrations/${n}/migration.sql`)).sort();

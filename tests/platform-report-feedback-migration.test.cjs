@@ -21,7 +21,7 @@ test('platform report feedback migration: new kinds, bounded context, browser ro
     await insertOld('pre-deletion', 'ACCOUNT_DELETION')
     for (const kind of ['ISSUE', 'FEEDBACK']) await assert.rejects(insertOld(`pre-${kind}`, kind), /check constraint/, 'before: ISSUE/FEEDBACK refused')
 
-    for (const n of names.filter(n => n >= NAME)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
+    for (const n of names.filter(n => n >= NAME && n !== '20261127010000_postgres_owned_tables' /* changes grants and policies on purpose; see tests/postgres-owned-tables.test.cjs */)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
     const kept = (await db.query(`SELECT id, kind, context FROM "PlatformReport" ORDER BY id`)).rows
     assert.deepEqual(kept, [{ id: 'old-content', kind: 'CONTENT', context: null }, { id: 'old-support', kind: 'SUPPORT', context: null }, { id: 'pre-deletion', kind: 'ACCOUNT_DELETION', context: null }], 'existing rows unchanged')
 

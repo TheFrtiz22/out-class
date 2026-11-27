@@ -23,7 +23,7 @@ test('alumni status migration: additive nullable columns, rows unchanged, server
       INSERT INTO "Club"(id,slug,name,tagline,description,color,category) VALUES('club','club','Club','','','#142d4e','Academic');
       INSERT INTO "ClubMember"(id,"clubId","userId") VALUES('m1','club','alice');`)
     const grantsBefore = (await db.query(`SELECT grantee, table_name, privilege_type FROM information_schema.role_table_grants WHERE table_name IN ('StudentProfile','ClubMember') ORDER BY 1,2,3`)).rows
-    for (const n of names.filter(n => n >= NAME)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
+    for (const n of names.filter(n => n >= NAME && n !== '20261127010000_postgres_owned_tables' /* changes grants and policies on purpose; see tests/postgres-owned-tables.test.cjs */)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
 
     const columns = (await db.query(`SELECT table_name, column_name, is_nullable, column_default, data_type FROM information_schema.columns
       WHERE (table_name='StudentProfile' AND column_name IN ('graduatedAt','graduationConfirmedAt','graduationPromptDismissedAt')) OR (table_name='ClubMember' AND column_name='alumniSince') ORDER BY 1,2`)).rows
