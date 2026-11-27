@@ -48,7 +48,7 @@ test('fk covering indexes: every foreign key covered, idempotent, rows and grant
         AND (i.indkey::int2[])[0:array_length(c.conkey,1)-1] @> c.conkey AND (i.indkey::int2[])[0:array_length(c.conkey,1)-1] <@ c.conkey) ORDER BY 1,2`
     assert.equal((await db.query(uncovered)).rows.length, statements.length, 'each new index covers a previously uncovered key')
 
-    for (const n of names.filter(n => n >= NAME)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
+    for (const n of names.filter(n => n >= NAME && n !== '20261127010000_postgres_owned_tables' /* changes grants and policies on purpose; see tests/postgres-owned-tables.test.cjs */)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
     assert.deepEqual((await db.query(uncovered)).rows, [], 'every public foreign key has a covering index')
     for (const { name, table, cols } of statements) {
       const { rows } = await db.query(`SELECT indexdef FROM pg_indexes WHERE schemaname='public' AND indexname=$1`, [name])

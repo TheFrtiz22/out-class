@@ -25,6 +25,12 @@ One-time owner setup (repository Settings → Environments): create `production`
 
 Order for a schema change: merge-ready PR, dry run, apply (approve), then merge the PR (or redeploy `main` if it merged first).
 
+### Who owns the tables
+
+Since `20261127010000_postgres_owned_tables` the migration operator (`postgres`, the role behind `MIGRATION_DATABASE_URL` and the owner of `_prisma_migrations`) owns every application table, so migrations alter tables as their owner. The runtime role `outclass_production_app` owns nothing and has no DDL, `TRUNCATE`, `REFERENCES` or `TRIGGER`; it reads and writes rows through explicit grants and policies. Run migrations only as the ledger's owner: that migration refuses any other role, and a different operator would leave tables with mixed owners. Design, lock behaviour, verification queries and the emergency rollback (`scripts/db/rollback-postgres-owned-tables.sql`, not a migration, owner approval) are in [the ownership note](agent-ops/postgres-owned-tables-2026-11-27.md).
+
+A migration that creates a table must, in the same file, enable row-level security, grant `outclass_production_app` only the commands the server needs, and add one permissive policy per command for that role (pattern: `20261118120000_meeting_check_in_pass`). Do not write `OWNER TO outclass_production_app`; `tests/postgres-owned-tables.test.cjs` fails on it and on any table the runtime role cannot reach.
+
 ## Fresh installations
 
 Provision PostgreSQL (and Supabase Auth/Storage if used). Use npm run db:deploy against an empty application schema, then npx prisma generate. Do not load the archived snapshot. Existing Supabase-managed auth/storage schemas are not replaced by Prisma.

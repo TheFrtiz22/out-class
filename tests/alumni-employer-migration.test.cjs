@@ -20,7 +20,7 @@ test('alumni employer migration: additive, bounded, default-on choices, server-o
     await db.exec(`INSERT INTO "User"(id,email) VALUES('alice','a@virginia.edu');
       INSERT INTO "StudentProfile"(id,"userId","firstName","lastName","computingId",major,"gradYear") VALUES('p1','alice','A','L','al1a','Economics',2026);`)
     const grantsBefore = (await db.query(`SELECT grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name='StudentProfile' ORDER BY 1,2`)).rows
-    for (const n of names.filter(n => n >= NAME)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
+    for (const n of names.filter(n => n >= NAME && n !== '20261127010000_postgres_owned_tables' /* changes grants and policies on purpose; see tests/postgres-owned-tables.test.cjs */)) await db.exec(fs.readFileSync(path.join(dir, n, 'migration.sql'), 'utf8'))
 
     const columns = (await db.query(`SELECT column_name, is_nullable, column_default, data_type FROM information_schema.columns
       WHERE table_name='StudentProfile' AND column_name IN ('postGradEmployer','postGradRole','alumniPlacementClubIds','alumniDirectoryVisible','alumniPlacementShare') ORDER BY 1`)).rows

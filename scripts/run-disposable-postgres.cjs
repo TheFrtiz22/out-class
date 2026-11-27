@@ -26,6 +26,8 @@ const suites = {
       "tests/student-calendar-scope-native.test.cjs",
       "tests/voting-ballot-race-native.test.cjs",
       "tests/mock-recruiting-cycle-native.test.cjs",
+      // Builds and drops its own scratch database on this cluster; the suite database is not touched.
+      "tests/postgres-owned-tables-native.test.cjs",
       // Last: its bursts create their own clubs and users; earlier suites never see them.
       "tests/interview-booking-contention-native.test.cjs",
     ],
@@ -138,10 +140,9 @@ try {
   command(process.execPath, ["node_modules/prisma/build/index.js", "migrate", "deploy"], { env });
   command("docker", ["exec", "-i", suite.container, "psql", "-p", String(suite.port), "-U", "fixture_superuser",
     "-d", suite.database, "-v", "ON_ERROR_STOP=1"], {
-    input: "DO $$ DECLARE t text; BEGIN FOR t IN SELECT tablename FROM pg_tables " +
-      "WHERE schemaname='public' AND tablename<>'_prisma_migrations' LOOP " +
-      "EXECUTE format('ALTER TABLE public.%I OWNER TO outclass_production_app',t); " +
-      "END LOOP; END $$; REVOKE CREATE ON SCHEMA public FROM PUBLIC;",
+    // The server role owns no table (20261127010000_postgres_owned_tables); it works through
+    // its grants and policies, exactly as in production.
+    input: "REVOKE CREATE ON SCHEMA public FROM PUBLIC;",
   });
   console.log("Running " + suite.tests.length + " environment-gated suites against disposable " + suite.database);
   // No parallel test files: suites can mutate overlapping fixture state.
